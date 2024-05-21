@@ -89,7 +89,7 @@
       }
     },
     {
-      "identifier":"workLoadVersion",
+      "identifier":"humanitecWorkloadVersion",
       "title":"WorkLoad Version",
       "icon":"Microservice",
       "schema":{
