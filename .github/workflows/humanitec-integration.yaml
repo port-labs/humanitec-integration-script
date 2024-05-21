@@ -1,0 +1,41 @@
+
+name: Ingest Humanitec Integration Resources
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+  ingest-humanitec-resources: 
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+    
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r src/requirements.txt
+      
+      - name: Ingest Entities to Port
+        env:
+            PORT_CLIENT_ID: ${{ toJson(matrix.workflows) }}
+            PORT_CLIENT_SECRET: ${{ secrets.PATTOKEN }}
+            HUMANITEC_API_TOKEN: ${{ secrets.HUMANITEC_API_TOKEN }}
+            HUMANITEC_BASE_URL: ${{ secrets.HUMANITEC_BASE_URL }}
+            HUMANITEC_ORG_ID: ${{secrets.HUMANITEC_ORG_ID }}    
+        run: |
+          python src/humanitec-exporter.py
