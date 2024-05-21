@@ -3,46 +3,17 @@
       "identifier":"humanitecApplication",
       "description":"This blueprint represents an application in Humanitec.",
       "title":"Humanitec Application",
-      "icon":"Humanitec",
+      "icon":"Microservice",
       "schema":{
         "properties":{
-          "id":{
-            "type":"string",
-            "title":"Application ID",
-            "description":"The unique identifier of the application."
-          },
-          "name":{
-            "type":"string",
-            "title":"Name",
-            "description":"The name of the application."
-          },
-          "description":{
-            "type":"string",
-            "title":"Description",
-            "description":"A brief description of the application."
-          },
           "createdAt":{
             "type":"string",
             "format":"date-time",
             "title":"Creation Date",
             "description":"The date and time when the application was created."
-          },
-          "updatedAt":{
-            "type":"string",
-            "format":"date-time",
-            "title":"Last Updated",
-            "description":"The date and time when the application was last updated."
-          },
-          "tags":{
-            "type":"array",
-            "title":"Tags",
-            "description":"Tags associated with the application."
           }
         },
-        "required":[
-          "id",
-          "name"
-        ]
+        "required":[]
       },
       "mirrorProperties":{},
       "calculationProperties":{},
@@ -59,6 +30,28 @@
             "title":"Type",
             "icon":"DefaultProperty",
             "type":"string"
+          },
+          "createdAt":{
+            "type":"string",
+            "format":"date-time",
+            "title":"Creation Date",
+            "description":"The date and time when the environment was created."
+          },
+          "lastDeploymentStatus": {
+            "type":"string",
+            "title":"Creation Date",
+            "description":"The status of the last deployment."
+          },
+          "lastDeploymentDate": {
+            "type":"string",
+            "format":"date-time",
+            "title": "Last Deployment Date",
+            "description": "The date and time of the last time the environment was deployed."
+          },
+          "lastDeploymentComment": {
+            "type":"string",
+            "title": "Last Deployment Comment",
+            "description": "comment on the last deployment"
           }
         },
         "required":[]
@@ -100,22 +93,12 @@
       "title":"WorkLoad Version",
       "icon":"Microservice",
       "schema":{
-        "properties":{
-          
-        },
-        "required":[
-          
-        ]
+        "properties":{},
+        "required":[]
       },
-      "mirrorProperties":{
-        
-      },
-      "calculationProperties":{
-        
-      },
-      "aggregationProperties":{
-        
-      },
+      "mirrorProperties":{},
+      "calculationProperties":{},
+      "aggregationProperties":{},
       "relations":{
         "environment":{
           "title":"Environment",
@@ -131,4 +114,4 @@
         }
       }
     }
-  ]
+    ]

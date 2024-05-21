@@ -124,15 +124,17 @@ def process_app_entities(apps_data: list[dict[str, Any]]):
     for app in apps_data:
         entity = {
             "identifier": app["id"],
-            "title": app["name"],
-            "properties": {},
+            "title": remove_symbols_and_title_case(app["name"]),
+            "properties": {
+                "createdAt": app["created_at"]
+            },
             "relations": {},
         }
 
         add_entity_to_port(blueprint_id=blueprint_id, entity_object=entity)
 
 
-def process_environments_entities(environment_data: list[dict[str, Any]]):
+def process_environment_entities(environment_data: list[dict[str, Any]], app_id:str):
     blueprint_id = "humanitecEnvironment"
 
     for environment in environment_data:
@@ -142,9 +144,13 @@ def process_environments_entities(environment_data: list[dict[str, Any]]):
             "title": environment["name"],
             "properties": {
                 "type": environment["type"],
+                "createdAt": environment["createdAt"],
+                "LastDeploymentStatus": environment["last_deploy"]["status"],
+                "LastDeploymentDate": environment["last_deploy"]["created_at"],
+                "LastDeploymentComment": environment["last_deploy"]["comment"]
             },
             "relations": {
-                "application": ""
+                "application": app_id
             },
         }
         add_entity_to_port(blueprint_id=blueprint_id, entity_object=entity)
@@ -170,7 +176,7 @@ def process_workload_profile_entities(workload_profile_data: list[dict[str, Any]
 
 def process_workload_profile_version_entities(workload_profile_version_data: list[dict[str, Any]]):
     blueprint_id = "humanitecWorkloadVersion"
-    print("Workload Profile Data",workload_profile_version_data)
+    # print("Workload Profile Data",workload_profile_version_data)
 
     for workload_profile_version in workload_profile_version_data:
         entity = {
@@ -211,7 +217,8 @@ def get_environments(app: dict[str, Any]):
         logger.info(
             f"received environments batch with size {len(environments_batch)} from app: {app['name']}"
         )
-        process_environments_entities(environment_data=environments_batch)
+        print("Environments",environments_batch)
+        process_environment_entities(environment_data=environments_batch, app_id= app['id'])
 
 
 if __name__ == "__main__":
