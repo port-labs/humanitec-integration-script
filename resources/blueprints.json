@@ -1,0 +1,134 @@
+[
+    {
+      "identifier":"humanitecApplication",
+      "description":"This blueprint represents an application in Humanitec.",
+      "title":"Humanitec Application",
+      "icon":"Humanitec",
+      "schema":{
+        "properties":{
+          "id":{
+            "type":"string",
+            "title":"Application ID",
+            "description":"The unique identifier of the application."
+          },
+          "name":{
+            "type":"string",
+            "title":"Name",
+            "description":"The name of the application."
+          },
+          "description":{
+            "type":"string",
+            "title":"Description",
+            "description":"A brief description of the application."
+          },
+          "createdAt":{
+            "type":"string",
+            "format":"date-time",
+            "title":"Creation Date",
+            "description":"The date and time when the application was created."
+          },
+          "updatedAt":{
+            "type":"string",
+            "format":"date-time",
+            "title":"Last Updated",
+            "description":"The date and time when the application was last updated."
+          },
+          "tags":{
+            "type":"array",
+            "title":"Tags",
+            "description":"Tags associated with the application."
+          }
+        },
+        "required":[
+          "id",
+          "name"
+        ]
+      },
+      "mirrorProperties":{},
+      "calculationProperties":{},
+      "aggregationProperties":{},
+      "relations":{}
+    },
+    {
+      "identifier":"humanitecEnvironment",
+      "title":"Humanitec Environment",
+      "icon":"Environment",
+      "schema":{
+        "properties":{
+          "type":{
+            "title":"Type",
+            "icon":"DefaultProperty",
+            "type":"string"
+          }
+        },
+        "required":[]
+      },
+      "mirrorProperties":{},
+      "calculationProperties":{},
+      "aggregationProperties":{},
+      "relations":{
+        "application":{
+          "title":"Application",
+          "target":"humanitecApplication",
+          "required":false,
+          "many":false
+        }
+      }
+    },
+    {
+      "identifier":"humanitecWorkload",
+      "title":"Workload",
+      "icon":"Cluster",
+      "schema":{
+        "properties":{},
+        "required":[]
+      },
+      "mirrorProperties":{},
+      "calculationProperties":{},
+      "aggregationProperties":{},
+      "relations":{
+        "application":{
+          "title":"Application",
+          "target":"humanitecApplication",
+          "required":false,
+          "many":true
+        }
+      }
+    },
+    {
+      "identifier":"workLoadVersion",
+      "title":"WorkLoad Version",
+      "icon":"Microservice",
+      "schema":{
+        "properties":{
+          
+        },
+        "required":[
+          
+        ]
+      },
+      "mirrorProperties":{
+        
+      },
+      "calculationProperties":{
+        
+      },
+      "aggregationProperties":{
+        
+      },
+      "relations":{
+        "environment":{
+          "title":"Environment",
+          "target":"humanitecEnvironment",
+          "required":false,
+          "many":false
+        },
+        "workload":{
+          "title":"Workload",
+          "target":"humanitecWorkload",
+          "required":false,
+          "many":false
+        }
+      }
+    }
+  ]
