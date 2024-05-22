@@ -25,7 +25,7 @@ jobs:
       - name: Ingest Entities to Port
         env:
             PORT_CLIENT_ID: ${{ secrets.PORT_CLIENT_ID }}
-            PORT_CLIENT_SECRET: ${{ secrets.PATTOKEN }}
+            PORT_CLIENT_SECRET: ${{ secrets.PORT_CLIENT_SECRET }}
             HUMANITEC_API_TOKEN: ${{ secrets.HUMANITEC_API_TOKEN }}
             HUMANITEC_BASE_URL: ${{ secrets.HUMANITEC_BASE_URL }}
             HUMANITEC_ORG_ID: ${{secrets.HUMANITEC_ORG_ID }}    
