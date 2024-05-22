@@ -1,1 +1,111 @@
+name: Create Humanitec Workload Profile
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        description: 'The workload profile ID'
+        required: true
+        type: string
+      spec_definition:
+        description: 'Workload specification definition'
+        required: true
+      workload_profile_chart_id:
+        description: 'Workload Profile Chart ID'
+        required: true
+        type: string
+      workload_profile_chart_version:
+        description: 'Workload Profile Chart Version'
+        required: true
+        type: string
+      port_context:
+        required: true
+        description: includes blueprint, run ID, and entity identifier from Port.
 
+jobs:
+  create-workload-profile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Workload Profile
+        id : create_workload_profile
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: 'https://api.humanitec.io/orgs/${{secrets.HUMANITEC_ORG_ID}}/workload-profiles'
+          method: 'POST'
+          customHeaders: '{"Content-Type": "application/json", "Authorization": "Bearer ${{ secrets.HUMANITEC_API_TOKEN }}"}'
+          data: >-
+            {
+              "service": {
+                "id": "${{ github.event.inputs.id }}",
+                "spec_definition": ${{ fromJson(github.event.inputs.spec_definition) }},
+                "status": "active",
+                "workload_profile_chart": {
+                  "id": "${{ github.event.inputs.workload_profile_chart_id }}",
+                  "version": "${{ github.event.inputs.workload_profile_chart_version }}"
+                  }
+                }
+              }
+          
+      - name: Log Create Workload Profile Request Failure 
+        if: failure()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).run_id}}
+          logMessage: "Request to create workload profile failed ..."
+          
+      - name: Log Request Success
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).run_id}}
+          logMessage: |
+             Humanitech workload profile created! ✅
+          
+      - name: Log Before Upserting Entity
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).run_id}}
+          logMessage: |
+
+      - name: UPSERT Humanitec Workload Profile
+        uses: port-labs/port-github-action@v1
+        with:
+          identifier: "${{ fromJson(steps.create_workload_profile.outputs.response).id }}" 
+          title: "${{ fromJson(steps.create_workload_profile.outputs.response).id }}"
+          icon: Microservice
+          blueprint: "${{fromJson(inputs.port_context).blueprint}}"
+          properties: |-
+            {
+              "description": "${{ fromJson(steps.create_workload_profile.outputs.response).description }}",
+              "version": "${{ fromJson(steps.create_workload_profile.outputs.response).version }}",
+              "createdAt": "${{ fromJson(steps.create_workload_profile.outputs.response).created_at }}",
+              "updatedAt": "${{ fromJson(steps.create_workload_profile.outputs.response).updated_at }}",
+              "specDefinition": "${{ fromJson(steps.create_workload_profile.outputs.response).spec_definition }}"
+            }
+          relations: "{}"
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: UPSERT
+          runId: ${{fromJson(inputs.port_context).run_id}}
+
+      - name: Log After Upserting Entity
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).run_id}}
+          logMessage: |
+              Upserting was successful ✅
