@@ -11,14 +11,14 @@ import re
 
 # Get environment variables using the config object or os.environ["KEY"]
 
-PORT_CLIENT_ID = config("PORT_CLIENT_ID")
-PORT_CLIENT_SECRET = config("PORT_CLIENT_SECRET")
+PORT_CLIENT_ID = "Ex3GeM9hXjiYowHNkoWUxsMnP0ZXsMNm" #config("PORT_CLIENT_ID")
+PORT_CLIENT_SECRET = "CZhDeIwEEvQhqiDD7r4DZ0ze2MlQ4jFT6QwzTnCSVaubYbcbRe18HnFwRIdVxOlZ" #config("PORT_CLIENT_SECRET")
 PORT_API_URL = "https://api.getport.io/v1"
 
 # Define your API token and base URL
-API_TOKEN = "WLnM3EJm1bGMScqvuu2HH4YBB5FaNRlYUqkuc2C-RrDM"
+HUMANITEC_API_TOKEN = "WLnM3EJm1bGMScqvuu2HH4YBB5FaNRlYUqkuc2C-RrDM"
 BASE_URL = "https://api.humanitec.io"
-ORG_ID = "port-testing"
+HUMANITEC_ORG_ID = "port-testing"
 
 ## According to https://support.atlassian.com/bitbucket-cloud/docs/api-request-limits/
 RATE_LIMIT = 1000  # Maximum number of requests allowed per hour
@@ -37,7 +37,7 @@ access_token = token_response.json()["accessToken"]
 port_headers = {"Authorization": f"Bearer {access_token}"}
 
 # Define the headers including the Authorization token
-headers = {"Authorization": f"Bearer {API_TOKEN}", "Content-Type": "application/json"}
+headers = {"Authorization": f"Bearer {HUMANITEC_API_TOKEN}", "Content-Type": "application/json"}
 
 
 def add_entity_to_port(blueprint_id, entity_object):
@@ -80,7 +80,7 @@ def get_paginated_resource(
                 params["start"] = next_page_start
             """
             # Define the endpoint for applications
-            endpoint = f"{BASE_URL}/orgs/{ORG_ID}/{path}"
+            endpoint = f"{BASE_URL}/orgs/{HUMANITEC_ORG_ID}/{path}"
             # Make the GET request to the Humanitec API
             response = requests.get(endpoint, headers=headers, params=params)
 
@@ -138,16 +138,15 @@ def process_environment_entities(environment_data: list[dict[str, Any]], app_id:
     blueprint_id = "humanitecEnvironment"
 
     for environment in environment_data:
-
         entity = {
             "identifier": environment["id"],
             "title": environment["name"],
             "properties": {
                 "type": environment["type"],
-                "createdAt": environment["createdAt"],
-                "LastDeploymentStatus": environment["last_deploy"]["status"],
-                "LastDeploymentDate": environment["last_deploy"]["created_at"],
-                "LastDeploymentComment": environment["last_deploy"]["comment"]
+                "createdAt": environment["created_at"],
+                "lastDeploymentStatus": environment.get("last_deploy",{}).get("status"),
+                "lastDeploymentDate": environment.get("last_deploy",{}).get("created_at"),
+                "lastDeploymentComment": environment.get("last_deploy",{}).get("comment")
             },
             "relations": {
                 "application": app_id
@@ -159,13 +158,16 @@ def process_environment_entities(environment_data: list[dict[str, Any]], app_id:
 def process_workload_profile_entities(workload_profile_data: list[dict[str, Any]]):
     blueprint_id = "humanitecWorkload"
     for workload_profile in workload_profile_data:
+        print(workload_profile)
         entity = {
             "identifier": workload_profile["id"],
             "title": remove_symbols_and_title_case(workload_profile["id"]),
             "properties": {
                 "description": workload_profile['description'],
                 "workloadProfileVersion": workload_profile["version"],
-                "createdAt": workload_profile["created_at"]
+                "createdAt": workload_profile["created_at"],
+                "updatedAt": workload_profile["updated_at"],
+                "version": workload_profile["version"],
             },
             "relations": {
                 "application": []
@@ -217,7 +219,6 @@ def get_environments(app: dict[str, Any]):
         logger.info(
             f"received environments batch with size {len(environments_batch)} from app: {app['name']}"
         )
-        print("Environments",environments_batch)
         process_environment_entities(environment_data=environments_batch, app_id= app['id'])
 
 
