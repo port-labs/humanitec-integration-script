@@ -15,6 +15,8 @@ PORT_CLIENT_ID = "Ex3GeM9hXjiYowHNkoWUxsMnP0ZXsMNm" #config("PORT_CLIENT_ID")
 PORT_CLIENT_SECRET = "CZhDeIwEEvQhqiDD7r4DZ0ze2MlQ4jFT6QwzTnCSVaubYbcbRe18HnFwRIdVxOlZ" #config("PORT_CLIENT_SECRET")
 PORT_API_URL = "https://api.getport.io/v1"
 
+print("PORT_CLIENT_ID",PORT_CLIENT_ID)
+print("PORT_CLIENT_SECRET",PORT_CLIENT_SECRET)
 # Define your API token and base URL
 HUMANITEC_API_TOKEN = "WLnM3EJm1bGMScqvuu2HH4YBB5FaNRlYUqkuc2C-RrDM"
 BASE_URL = "https://api.humanitec.io"
@@ -31,7 +33,9 @@ rate_limit_start = time.time()
 ## Get Port Access Token
 credentials = {"clientId": PORT_CLIENT_ID, "clientSecret": PORT_CLIENT_SECRET}
 token_response = requests.post(f"{PORT_API_URL}/auth/access_token", json=credentials)
-access_token = token_response.json()["accessToken"]
+access_token = token_response.json() #["accessToken"]
+print(access_token)
+access_token = access_token["accessToken"]
 
 # You can now use the value in access_token when making further requests
 port_headers = {"Authorization": f"Bearer {access_token}"}
