@@ -34,14 +34,12 @@ jobs:
           customHeaders: '{"Content-Type": "application/json", "Authorization": "Bearer ${{ secrets.HUMANITEC_API_TOKEN }}"}'
           data: >-
             {
-              "service": {
-                "id": "${{ github.event.inputs.id }}",
-                "spec_definition": ${{ fromJson(github.event.inputs.spec_definition) }},
-                "status": "active",
-                "workload_profile_chart": {
-                  "id": "${{ github.event.inputs.workload_profile_chart_id }}",
-                  "version": "${{ github.event.inputs.workload_profile_chart_version }}"
-                  }
+              "id": "${{ github.event.inputs.id }}",
+              "spec_definition": ${{ fromJson(github.event.inputs.spec_definition) }},
+              "status": "active",
+              "workload_profile_chart": {
+                "id": "${{ github.event.inputs.workload_profile_chart_id }}",
+                "version": "${{ github.event.inputs.workload_profile_chart_version }}"
                 }
               }
           
