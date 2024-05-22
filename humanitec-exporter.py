@@ -15,6 +15,8 @@ PORT_CLIENT_ID = config("PORT_CLIENT_ID")
 PORT_CLIENT_SECRET = config("PORT_CLIENT_SECRET")
 PORT_API_URL = "https://api.getport.io/v1"
 
+print("PORT_CLIENT_ID",PORT_CLIENT_ID)
+print("PORT_CLIENT_SECRET",PORT_CLIENT_SECRET)
 # Define your API token and base URL
 API_TOKEN = "WLnM3EJm1bGMScqvuu2HH4YBB5FaNRlYUqkuc2C-RrDM"
 BASE_URL = "https://api.humanitec.io"
