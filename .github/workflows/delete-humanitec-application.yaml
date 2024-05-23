@@ -46,11 +46,11 @@ jobs:
         with:
           url: 'https://api.getport.io/v1/auth/access_token'
           method: 'POST'
-          customHeaders: '{"Content-Type": "application/json"}'
-          data: >-
+          customHeaders: '{"Content-Type": "application/json", "accept": "application/json"}'
+          data: |
             {
-              "clientId": ${{secrets.PORT_CLIENT_ID}},
-              "clientSecret": ${{secrets.PORT_CLIENT_SECRET}}
+              "clientId": "${{ secrets.PORT_CLIENT_ID }}",
+              "clientSecret": "${{ secrets.PORT_CLIENT_SECRET }}"
             }
           
       - name: Delete Application From Port
@@ -80,4 +80,4 @@ jobs:
           operation: PATCH_RUN
           runId: ${{fromJson(inputs.port_context).run_id}}
           logMessage: |
-              Upserting was successful ✅
+              Application has been successfully deleted from port ✅
