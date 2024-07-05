@@ -1,0 +1,83 @@
+name: Delete Humanitec Application
+on:
+  workflow_dispatch:
+    inputs:
+      port_context:
+        required: true
+        description: includes blueprint, run ID, and entity identifier from Port.
+
+jobs:
+  delete-application:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete Application
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: 'https://api.humanitec.io/orgs/${{secrets.HUMANITEC_ORG_ID}}/apps/${{fromJson(inputs.port_context).entity}}'
+          method: 'DELETE'
+          customHeaders: '{"Content-Type": "application/json", "Authorization": "Bearer ${{ secrets.HUMANITEC_API_TOKEN }}"}'
+
+      - name: Log Delete Application Request Failure 
+        if: failure()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).run_id}}
+          logMessage: "Request to delete application failed ..."
+
+      - name: Log Delete Application Request Success
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).run_id}}
+          logMessage: |
+             Humanitech application has been successfully deleted! ✅
+             Deleting entity from port
+
+      - name: Get Port Token
+        id: port_access_token
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: 'https://api.getport.io/v1/auth/access_token'
+          method: 'POST'
+          customHeaders: '{"Content-Type": "application/json", "accept": "application/json"}'
+          data: |
+            {
+              "clientId": "${{ secrets.PORT_CLIENT_ID }}",
+              "clientSecret": "${{ secrets.PORT_CLIENT_SECRET }}"
+            }
+          
+      - name: Delete Application From Port
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: 'https://api.getport.io/v1/blueprints/${{fromJson(inputs.port_context).blueprint}}/entities/${{fromJson(inputs.port_context).entity}}?delete_dependents=false'
+          method: 'DELETE'
+          customHeaders: '{"Content-Type": "application/json", "Authorization": "Bearer ${{ fromJson(steps.port_access_token.outputs.response).accessToken }}"}'
+  
+      - name: Log Delete Application From Port Request Failure 
+        if: failure()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).run_id}}
+          logMessage: "Request to delete application failed ..."
+          
+      - name: Log Delete Application Entity From Port
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).run_id}}
+          logMessage: |
+              Application has been successfully deleted from port ✅
