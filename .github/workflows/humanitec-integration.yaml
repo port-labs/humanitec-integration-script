@@ -26,8 +26,7 @@ jobs:
         env:
             PORT_CLIENT_ID: ${{ secrets.PORT_CLIENT_ID }}
             PORT_CLIENT_SECRET: ${{ secrets.PORT_CLIENT_SECRET }}
-            HUMANITEC_API_TOKEN: ${{ secrets.HUMANITEC_API_TOKEN }}
-            HUMANITEC_BASE_URL: ${{ secrets.HUMANITEC_BASE_URL }}
-            HUMANITEC_ORG_ID: ${{secrets.HUMANITEC_ORG_ID }}    
+            API_TOKEN: ${{ secrets.HUMANITEC_API_TOKEN }}
+            ORG_ID: ${{secrets.HUMANITEC_ORG_ID }}    
         run: |
-          python humanitec-exporter.py
+          python integration/main.py
