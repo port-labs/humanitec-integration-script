@@ -6,6 +6,7 @@ import re
 from loguru import logger
 from .cache import InMemoryCache
 
+
 class CACHE_KEYS:
     APPLICATION = "APPLICATION_CACHE_KEY"
     ENVIRONMENT = "ENVIRONMENT_CACHE_KEY"
@@ -14,9 +15,11 @@ class CACHE_KEYS:
 
 
 class HumanitecClient:
-    def __init__(self, org_id,api_token, **kwargs) -> None:
-        self.client = kwargs.get("httpx_async_client",httpx.AsyncClient())
-        self.base_url = f"{kwargs.get('base_url','https://api.humanitec.io')}/orgs/{org_id}/"
+    def __init__(self, org_id, api_token, **kwargs) -> None:
+        self.client = kwargs.get("httpx_async_client", httpx.AsyncClient())
+        self.base_url = (
+            f"{kwargs.get('base_url','https://api.humanitec.io')}/orgs/{org_id}/"
+        )
         self.api_token = api_token
         self.cache = InMemoryCache()
         self.port_headers = None
@@ -37,6 +40,7 @@ class HumanitecClient:
     ) -> Any:
         url = self.base_url + endpoint
         try:
+            logger.debug(f"Requesting Humanitec data for endpoint: {endpoint}")
             response = await self.client.request(
                 method, url, headers=headers, json=json
             )
@@ -60,11 +64,9 @@ class HumanitecClient:
             "GET", endpoint, headers=humanitec_headers
         )
 
-        is_true = await self.cache.set(
+        await self.cache.set(
             CACHE_KEYS.APPLICATION, {app["id"]: app for app in applications}
         )
-        print("From Cache After Setting", await self.cache.get(CACHE_KEYS.APPLICATION))
-        logger.info(f"Caching application returned {is_true}")
         logger.info(f"Received {len(applications)} applications from Humanitec")
 
         return applications
@@ -82,7 +84,7 @@ class HumanitecClient:
         environments: List[Dict[str, Any]] = await self.send_api_request(
             "GET", endpoint, headers=humanitec_headers
         )
-        self.cache.set(
+        await self.cache.set(
             CACHE_KEYS.ENVIRONMENT,
             {
                 app["id"]: {
@@ -90,14 +92,14 @@ class HumanitecClient:
                 }
             },
         )
-
+        logger.info(f"Received {len(environments)} environments from Humanitec")
         return environments
 
     async def get_all_resources(self, app, env) -> List[Dict[str, Any]]:
         if cached_resources := await self.cache.get(CACHE_KEYS.RESOURCE):
             cached_resources = cached_resources.get(app["id"], {}).get(env["id"], {})
             logger.info(
-                f"Retrieved resources from cache for app {app['id']} and env {env['id']}"
+                f"Retrieved {len(cached_resources)} from cache for app {app['id']} and env {env['id']}"
             )
             return list(cached_resources.values())
 
@@ -116,7 +118,7 @@ class HumanitecClient:
                 }
             },
         )
-
+        logger.info(f"Received {len(resources)} resources from Humanitec")
         return resources
 
     async def get_resource_graph(
@@ -143,8 +145,9 @@ class HumanitecClient:
             }
             data.append(payload)
 
-        response = await self.get_resource_graph(app_id, env_id, data)
-        return response
+        graph_entities = await self.get_resource_graph(app_id, env_id, data)
+        logger.info(f"Received {len(graph_entities)} graph entities from Humanitec")
+        return graph_entities
 
     def group_resources_by_type(
         self, data: List[Dict[str, Any]]
