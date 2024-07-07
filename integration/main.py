@@ -2,6 +2,7 @@ import asyncio
 import argparse
 import time
 import datetime
+from decouple import config
 import re
 import asyncio
 from loguru import logger
@@ -296,11 +297,21 @@ class HumanitecExporter:
 
 
 if __name__ == "__main__":
+
+    def validate_args(args):
+        required_keys = ["org_id", "api_key", "port_client_id", "port_client_secret"]
+        missing_keys = [key for key in required_keys if not getattr(args, key)]
+        
+        if missing_keys:
+            logger.error(f"The following keys are required: {', '.join(missing_keys)}")
+            return False
+        return True
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--org-id", required=True, type=str, help="Humanitec organization ID"
+        "--org-id", required=False,default=config("ORG_ID",""), type=str, help="Humanitec organization ID"
     )
-    parser.add_argument("--api-key", required=True, type=str, help="Humanitec API key")
+    parser.add_argument("--api-key", required=False,default=config("API_KEY",""), type=str, help="Humanitec API key")
     parser.add_argument(
         "--api-url",
         type=str,
@@ -308,12 +319,15 @@ if __name__ == "__main__":
         help="Humanitec API URL",
     )
     parser.add_argument(
-        "--port-client-id", type=str, required=True, help="Port client ID"
+        "--port-client-id", type=str, required=False,default=config("PORT_CLIENT_ID",""), help="Port client ID"
     )
     parser.add_argument(
-        "--port-client-secret", type=str, required=True, help="Port client secret"
+        "--port-client-secret", type=str, required=False,default = config("PORT_CLIENT_SECRET",""), help="Port client secret"
     )
     args = parser.parse_args()
+    if not(validate_args(args)):
+        import sys
+        sys.exit()
 
     httpx_async_client = httpx.AsyncClient()
     port_client = PortClient(
