@@ -38,7 +38,7 @@ class HumanitecExporter:
         return title_case_string
 
     async def sync_applications(self) -> None:
-        logger.info("Started syncing applications")
+        logger.info(f"Syncing entities for blueprint {BLUEPRINT.APPLICATION}")
         applications = await self.humanitec_client.get_all_applications()
 
         def create_entity(application):
@@ -58,9 +58,10 @@ class HumanitecExporter:
         ]
 
         await asyncio.gather(*tasks)
+        logger.info(f"Finished syncing entities for blueprint {BLUEPRINT.APPLICATION}")
 
     async def sync_environments(self) -> None:
-
+        logger.info(f"Syncing entities for blueprint {BLUEPRINT.ENVIRONMENT}")
         applications = await self.humanitec_client.get_all_applications()
 
         def create_entity(application, environment):
@@ -95,8 +96,10 @@ class HumanitecExporter:
             for environment in environments
         ]
         await asyncio.gather(*tasks)
+        logger.info(f"Finished syncing entities for blueprint {BLUEPRINT.ENVIRONMENT}")
 
     async def sync_workloads(self):
+        logger.info(f"Syncing entities for blueprint {BLUEPRINT.WORKLOAD}")
         def create_workload_entity(resource):
             return {
                 "identifier": resource["res_id"].replace("modules.", ""),
@@ -124,9 +127,6 @@ class HumanitecExporter:
                 resources = await self.humanitec_client.get_all_resources(
                     application, environment
                 )
-                logger.info(
-                    f"Received resources batch with size {len(resources)} from app: {application['name']} and env: {environment['name']}"
-                )
                 resource_group = humanitec_client.group_resources_by_type(resources)
                 tasks = [
                     self.port_client.upsert_entity(
@@ -137,8 +137,10 @@ class HumanitecExporter:
                     if resource and resource["type"] == "workload"
                 ]
                 await asyncio.gather(*tasks)
+        logger.info(f"Finished syncing entities for blueprint {BLUEPRINT.WORKLOAD}")
 
     async def sync_resource_graphs(self) -> None:
+        logger.info(f"Syncing entities for blueprint {BLUEPRINT.RESOURCE_GRAPH}")
         def get_resource_graph_request_body(modules):
             return [
                 {
@@ -207,6 +209,7 @@ class HumanitecExporter:
                     for graph_data in resource_graph
                 ]
                 await asyncio.gather(*tasks)
+        logger.info(f"Finished syncing entities for blueprint {BLUEPRINT.RESOURCE_GRAPH}")
 
     async def enrich_resource_with_graph(self, resource, application, environment):
         data = {
@@ -224,6 +227,7 @@ class HumanitecExporter:
         return resource
 
     async def sync_resources(self) -> None:
+        logger.info(f"Syncing entities for blueprint {BLUEPRINT.RESOURCE}")
         def create_resource_entity(resource):
             workload_id = (
                 resource["res_id"].split(".")[1]
@@ -284,6 +288,7 @@ class HumanitecExporter:
                 for resource in all_resources
             ]
             await asyncio.gather(*entity_tasks)
+        logger.info(f"Finished syncing entities for blueprint {BLUEPRINT.RESOURCE}")
 
     async def sync_all(self) -> None:
         await self.sync_applications()
