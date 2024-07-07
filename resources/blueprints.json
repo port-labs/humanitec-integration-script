@@ -1,116 +1,206 @@
 [
-    {
-      "identifier":"humanitecApplication",
-      "description":"This blueprint represents an application in Humanitec.",
-      "title":"Humanitec Application",
-      "icon":"Microservice",
-      "schema":{
-        "properties":{
-          "createdAt":{
-            "type":"string",
-            "format":"date-time",
-            "title":"Creation Date",
-            "description":"The date and time when the application was created."
-          }
-        },
-        "required":[]
+  {
+    "identifier": "humanitecApplication",
+    "description": "Humanitec Application",
+    "title": "humanitecApplication",
+    "icon": "Apps",
+    "schema": {
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "title": "Created At",
+          "format": "date-time"
+        }
       },
-      "mirrorProperties":{},
-      "calculationProperties":{},
-      "aggregationProperties":{},
-      "relations":{}
+      "required": []
     },
+    "mirrorProperties": {},
+    "calculationProperties": {},
+    "aggregationProperties": {},
+    "relations": {}
+  },
     {
-      "identifier":"humanitecEnvironment",
-      "title":"Humanitec Environment",
-      "icon":"Environment",
-      "schema":{
-        "properties":{
-          "type":{
-            "title":"Type",
-            "icon":"DefaultProperty",
-            "type":"string"
+      "identifier": "humanitecEnvironment",
+      "title": "Humanitec Environment",
+      "icon": "Environment",
+      "schema": {
+        "properties": {
+          "type": {
+            "title": "Type",
+            "icon": "DefaultProperty",
+            "type": "string"
           },
-          "createdAt":{
-            "type":"string",
-            "format":"date-time",
-            "title":"Creation Date",
-            "description":"The date and time when the environment was created."
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Creation Date",
+            "description": "The date and time when the environment was created."
           },
           "lastDeploymentStatus": {
-            "type":"string",
-            "title":"Creation Date",
-            "description":"The status of the last deployment."
+            "type": "string",
+            "title": "Last Deployment Status",
+            "description": "The status of the last deployment."
           },
           "lastDeploymentDate": {
-            "type":"string",
-            "format":"date-time",
+            "type": "string",
+            "format": "date-time",
             "title": "Last Deployment Date",
             "description": "The date and time of the last time the environment was deployed."
           },
           "lastDeploymentComment": {
-            "type":"string",
+            "type": "string",
             "title": "Last Deployment Comment",
             "description": "comment on the last deployment"
           }
         },
-        "required":[]
+        "required": []
       },
-      "mirrorProperties":{},
-      "calculationProperties":{},
-      "aggregationProperties":{},
-      "relations":{
-        "application":{
-          "title":"Application",
-          "target":"humanitecApplication",
-          "required":false,
-          "many":false
+      "mirrorProperties": {},
+      "calculationProperties": {},
+      "aggregationProperties": {},
+      "relations": {
+        "humanitecApplication": {
+          "title": "Application",
+          "target": "humanitecApplication",
+          "required": false,
+          "many": false
         }
       }
     },
     {
-      "identifier":"humanitecWorkload",
-      "title":"Workload",
-      "icon":"Cluster",
-      "schema":{
-        "properties":{},
-        "required":[]
-      },
-      "mirrorProperties":{},
-      "calculationProperties":{},
-      "aggregationProperties":{},
-      "relations":{
-        "application":{
-          "title":"Application",
-          "target":"humanitecApplication",
-          "required":false,
-          "many":true
-        }
-      }
-    },
-    {
-      "identifier":"humanitecWorkloadVersion",
-      "title":"WorkLoad Version",
-      "icon":"Microservice",
-      "schema":{
-        "properties":{},
-        "required":[]
-      },
-      "mirrorProperties":{},
-      "calculationProperties":{},
-      "aggregationProperties":{},
-      "relations":{
-        "environment":{
-          "title":"Environment",
-          "target":"humanitecEnvironment",
-          "required":false,
-          "many":false
+      "identifier": "humanitecWorkload",
+      "title": "Workload",
+      "icon": "Cluster",
+      "schema": {
+        "properties": {
+          "class": {
+            "title": "Class",
+            "description": "The class of the workload",
+            "type": "string",
+            "icon": "DefaultProperty"
+          },
+          "driverType": {
+            "title": "Driver Type",
+            "description": "The driver type of the workload",
+            "type": "string",
+            "icon": "DefaultProperty"
+          },
+          "definitionId": {
+            "title": "Definition ID",
+            "description": "The definition ID of the workload",
+            "type": "string",
+            "icon": "DefaultProperty"
+          },
+          "definitionVersionId": {
+            "title": "Definition Version ID",
+            "description": "The definition version ID of the workload",
+            "type": "string",
+            "icon": "DefaultProperty"
+          },
+          "status": {
+            "title": "Status",
+            "description": "The status of the workload",
+            "type": "string",
+            "icon": "DefaultProperty"
+          },
+          "updatedAt": {
+            "title": "Update Date",
+            "description": "The date and time when the workload was last updated",
+            "type": "string",
+            "format": "date-time",
+            "icon": "DefaultProperty"
+          }
         },
-        "workload":{
-          "title":"Workload",
-          "target":"humanitecWorkload",
-          "required":false,
-          "many":false
+        "required": []
+      },
+      "mirrorProperties": {},
+      "calculationProperties": {},
+      "aggregationProperties": {},
+      "relations": {
+        "humanitecEnvironment": {
+          "title": "Environment",
+          "target": "humanitecEnvironment",
+          "required": false,
+          "many": false
+        }
+      }
+    },
+    {
+      "identifier": "humanitecResource",
+      "title": "Humanitec Resource",
+      "icon": "Microservice",
+      "schema": {
+        "properties": {
+          "type": {
+            "title": "Type",
+            "description": "The type of the resource",
+            "type": "string",
+            "icon": "DefaultProperty"
+          },
+          "class": {
+            "title": "Class",
+            "description": "The class of the resource",
+            "type": "string",
+            "icon": "DefaultProperty"
+          },
+          "resource": {
+            "title": "Resource",
+            "description": "The resource",
+            "type": "object",
+            "icon": "DefaultProperty"
+          },
+          "resourceSchema": {
+            "title": "Resource Schema",
+            "description": "The schema of the resource",
+            "type": "object",
+            "icon": "DefaultProperty"
+          },
+          "guresid": {
+            "title": "GU Resource ID",
+            "description": "The GU resource ID",
+            "type": "string",
+            "icon": "DefaultProperty"
+          }
+        },
+        "required": []
+      },
+      "mirrorProperties": {},
+      "calculationProperties": {},
+      "aggregationProperties": {},
+      "relations": {
+        "humanitecResourceGraph": {
+          "title": "Depends On",
+          "description": "Resource Graph",
+          "target": "humanitecResourceGraph",
+          "required": false,
+          "many": true
+        },
+        "humanitecWorkload": {
+          "title": "Humanitec Workload",
+          "target": "humanitecWorkload",
+          "required": false,
+          "many": false
+        }
+      }
+    },
+    {
+      "identifier": "humanitecResourceGraph",
+      "description": "Humanitec Resource Graph",
+      "title": "Resource Graph",
+      "icon": "Microservice",
+      "schema": {
+        "properties": {},
+        "required": []
+      },
+      "mirrorProperties": {},
+      "calculationProperties": {},
+      "aggregationProperties": {},
+      "relations": {
+        "humanitecResourceGraph": {
+          "title": "Resource Graph",
+          "target": "humanitecResourceGraph",
+          "required": false,
+          "many": true
         }
       }
     }
