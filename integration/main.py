@@ -315,7 +315,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--api-url",
         type=str,
-        default="https://api.humanitec.com",
+        default=config("API_URL","https://api.humanitec.com"),
         help="Humanitec API URL",
     )
     parser.add_argument(
