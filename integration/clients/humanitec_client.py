@@ -171,7 +171,6 @@ class HumanitecClient:
             logger.info(
                 f"Received {len(graph_entities)} resource graph entities from app: {app['id']} and env: {env['id']} using data: {data}"
             )
-            print("Graph Entities", graph_entities)
             return graph_entities
         except Exception as e:
             logger.error(
