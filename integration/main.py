@@ -66,7 +66,7 @@ class HumanitecExporter:
 
         def create_entity(application, environment):
             return {
-                "identifier": environment["id"],
+                "identifier": f"{application['id']}/{environment['id']}",
                 "title": environment["name"],
                 "properties": {
                     "type": environment["type"],
@@ -101,7 +101,7 @@ class HumanitecExporter:
     async def sync_workloads(self):
         logger.info(f"Syncing entities for blueprint {BLUEPRINT.WORKLOAD}")
 
-        def create_workload_entity(resource):
+        def create_workload_entity(resource, application):
             return {
                 "identifier": resource["res_id"].replace("modules.", ""),
                 "title": self.remove_symbols_and_title_case(
@@ -117,7 +117,7 @@ class HumanitecExporter:
                     "graphResourceID": resource["gu_res_id"],
                 },
                 "relations": {
-                    BLUEPRINT.ENVIRONMENT: resource["env_id"],
+                    BLUEPRINT.ENVIRONMENT: f"{application['id']}/{environment['id']}",
                 },
             }
 
@@ -132,7 +132,7 @@ class HumanitecExporter:
                 tasks = [
                     self.port_client.upsert_entity(
                         blueprint_id=BLUEPRINT.WORKLOAD,
-                        entity_object=create_workload_entity(resource),
+                        entity_object=create_workload_entity(resource, application),
                     )
                     for resource in resource_group.get("modules", [])
                     if resource and resource["type"] == "workload"
@@ -348,7 +348,8 @@ if __name__ == "__main__":
 
         sys.exit()
 
-    httpx_async_client = httpx.AsyncClient()
+    timeout = httpx.Timeout(10.0, connect=10.0, read=10.0, write=10.0)
+    httpx_async_client = httpx.AsyncClient(timeout=timeout)
     port_client = PortClient(
         args.port_client_id,
         args.port_client_secret,
