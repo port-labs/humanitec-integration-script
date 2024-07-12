@@ -10,7 +10,6 @@ from .cache import InMemoryCache
 class CACHE_KEYS:
     APPLICATION = "APPLICATION_CACHE_KEY"
     ENVIRONMENT = "ENVIRONMENT_CACHE_KEY"
-    WORKLOAD = "WORKLOAD_CACHE_KEY"
     RESOURCE = "RESOURCE_CACHE_KEY"
 
 
@@ -36,7 +35,7 @@ class HumanitecClient:
         method: str,
         endpoint: str,
         headers: Dict[str, str] | None = None,
-        json: Dict[str, Any] | None = None,
+        json: Dict[str, Any] | List[Dict[str, Any]] | None = None,
     ) -> Any:
         url = self.base_url + endpoint
         try:
@@ -72,57 +71,73 @@ class HumanitecClient:
         return applications
 
     async def get_all_environments(self, app) -> List[Dict[str, Any]]:
-        if cached_environments := await self.cache.get(CACHE_KEYS.ENVIRONMENT):
-            cached_environments = cached_environments.get(app["id"], {})
-            logger.info(
-                f"Retrieved {len(cached_environments)} environment for {app['id']} from cache"
-            )
-            return list(cached_environments.values())
 
-        endpoint = f"apps/{app['id']}/envs"
-        humanitec_headers = self.get_humanitec_headers()
-        environments: List[Dict[str, Any]] = await self.send_api_request(
-            "GET", endpoint, headers=humanitec_headers
-        )
-        await self.cache.set(
-            CACHE_KEYS.ENVIRONMENT,
-            {
-                app["id"]: {
-                    environment["id"]: environment for environment in environments
-                }
-            },
-        )
-        logger.info(f"Received {len(environments)} environments from Humanitec")
-        return environments
+        try:
+            if cached_environments := await self.cache.get(CACHE_KEYS.ENVIRONMENT):
+                if cached_environments := cached_environments.get(app["id"], {}):
+                    logger.info(
+                        f"Retrieved {len(cached_environments)} environment for {app['id']} from cache"
+                    )
+                    return list(cached_environments.values())
+
+            logger.info("Fetching environments from Humanitec")
+
+            endpoint = f"apps/{app['id']}/envs"
+            humanitec_headers = self.get_humanitec_headers()
+            environments: List[Dict[str, Any]] = await self.send_api_request(
+                "GET", endpoint, headers=humanitec_headers
+            )
+            await self.cache.set(
+                CACHE_KEYS.ENVIRONMENT,
+                {
+                    app["id"]: {
+                        environment["id"]: environment for environment in environments
+                    }
+                },
+            )
+            logger.info(f"Received {len(environments)} environments from Humanitec")
+            return environments
+        except Exception as e:
+            logger.error(f"Failed to fetch environments from {app['id']}: {str(e)}")
+            return []
 
     async def get_all_resources(self, app, env) -> List[Dict[str, Any]]:
-        if cached_resources := await self.cache.get(CACHE_KEYS.RESOURCE):
-            cached_resources = cached_resources.get(app["id"], {}).get(env["id"], {})
-            logger.info(
-                f"Retrieved {len(cached_resources)} resources from cache for app {app['id']} and env {env['id']}"
-            )
-            return list(cached_resources.values())
+        try:
+            if cached_resources := await self.cache.get(CACHE_KEYS.RESOURCE):
+                if cached_resources := cached_resources.get(app["id"], {}).get(
+                    env["id"], {}
+                ):
+                    logger.info(
+                        f"Retrieved {len(cached_resources)} resources from cache for app {app['id']} and env {env['id']}"
+                    )
+                    return list(cached_resources.values())
 
-        endpoint = f"apps/{app['id']}/envs/{env['id']}/resources"
-        humanitec_headers = self.get_humanitec_headers()
-        resources: List[Dict[str, Any]] = await self.send_api_request(
-            "GET", endpoint, headers=humanitec_headers
-        )
-        await self.cache.set(
-            CACHE_KEYS.RESOURCE,
-            {
-                app["id"]: {
-                    env["id"]: {
-                        resource["gu_res_id"]: resource for resource in resources
+            logger.info("Fetching resources from Humanitec")
+            endpoint = f"apps/{app['id']}/envs/{env['id']}/resources"
+            humanitec_headers = self.get_humanitec_headers()
+            resources: List[Dict[str, Any]] = await self.send_api_request(
+                "GET", endpoint, headers=humanitec_headers
+            )
+            await self.cache.set(
+                CACHE_KEYS.RESOURCE,
+                {
+                    app["id"]: {
+                        env["id"]: {
+                            resource["gu_res_id"]: resource for resource in resources
+                        }
                     }
-                }
-            },
-        )
-        logger.info(f"Received {len(resources)} resources from Humanitec")
-        return resources
+                },
+            )
+            logger.info(f"Received {len(resources)} resources from Humanitec")
+            return resources
+        except Exception as e:
+            logger.error(
+                f"Failed to fetch resources from {env['id']} environment in {app[id]}: {str(e)}"
+            )
+            return []
 
     async def get_resource_graph(
-        self, app: str, env: str, data: List[Dict[str, Any]]
+        self, app: Dict[str, Any], env: Dict[str, Any], data: List[Dict[str, Any]]
     ) -> Any:
         endpoint = f"apps/{app['id']}/envs/{env['id']}/resources/graph"
         humanitec_headers = self.get_humanitec_headers()
@@ -133,30 +148,41 @@ class HumanitecClient:
         return graph
 
     async def get_all_resource_graphs(
-        self, modules: List[Dict[str, Any]], app: str, env: str
-    ) -> Any:
-        
-        def get_resource_graph_request_body(modules):
-            return [
-                {
-                    "id": module["gu_res_id"],
-                    "type": module["type"],
-                    "resource": module["resource"],
-                }
-                for module in modules
-            ]
-        data = get_resource_graph_request_body(modules)
-        
-        graph_entities = await self.get_resource_graph(app, env, data)
-        logger.info(
-            f"Received {len(graph_entities)} resource graph entities from app: {app['id']} and env: {env['id']} using data: {data}"
-        )
-        return graph_entities
+        self, modules: List[Dict[str, Any]], app: Dict[str, Any], env: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+
+        try:
+
+            def get_resource_graph_request_body(modules):
+                return [
+                    {
+                        "id": module["gu_res_id"],
+                        "type": module["type"],
+                        "resource": module["resource"],
+                    }
+                    for module in modules
+                ]
+
+            data = get_resource_graph_request_body(modules)
+
+            graph_entities: List[Dict[str, Any]] = await self.get_resource_graph(
+                app, env, data
+            )
+            logger.info(
+                f"Received {len(graph_entities)} resource graph entities from app: {app['id']} and env: {env['id']} using data: {data}"
+            )
+            print("Graph Entities", graph_entities)
+            return graph_entities
+        except Exception as e:
+            logger.error(
+                f"Failed to fetch resource graphs from {env['id']} environment in {app['id']}: {str(e)}"
+            )
+            return []
 
     def group_resources_by_type(
         self, data: List[Dict[str, Any]]
     ) -> Dict[str, List[Dict[str, Any]]]:
-        grouped_resources = {}
+        grouped_resources: dict[str, Any] = {}
         for resource in data:
             workload_id = resource["res_id"].split(".")[0]
             if workload_id not in grouped_resources:

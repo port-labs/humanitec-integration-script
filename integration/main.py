@@ -2,7 +2,7 @@ import asyncio
 import argparse
 import time
 import datetime
-from decouple import config
+from decouple import config  # type: ignore
 import re
 import asyncio
 from loguru import logger
@@ -100,6 +100,7 @@ class HumanitecExporter:
 
     async def sync_workloads(self):
         logger.info(f"Syncing entities for blueprint {BLUEPRINT.WORKLOAD}")
+
         def create_workload_entity(resource):
             return {
                 "identifier": resource["res_id"].replace("modules.", ""),
@@ -172,8 +173,8 @@ class HumanitecExporter:
                 if not modules:
                     continue
 
-                resource_graph = await humanitec_client.get_all_resource_graphs(modules,
-                    application, environment
+                resource_graph = await humanitec_client.get_all_resource_graphs(
+                    modules, application, environment
                 )
 
                 # First pass: Create entities without relations
@@ -199,7 +200,9 @@ class HumanitecExporter:
                     for graph_data in resource_graph
                 ]
                 await asyncio.gather(*tasks)
-        logger.info(f"Finished syncing entities for blueprint {BLUEPRINT.RESOURCE_GRAPH}")
+        logger.info(
+            f"Finished syncing entities for blueprint {BLUEPRINT.RESOURCE_GRAPH}"
+        )
 
     async def enrich_resource_with_graph(self, resource, application, environment):
         data = {
@@ -218,6 +221,7 @@ class HumanitecExporter:
 
     async def sync_resources(self) -> None:
         logger.info(f"Syncing entities for blueprint {BLUEPRINT.RESOURCE}")
+
         def create_resource_entity(resource):
             workload_id = (
                 resource["res_id"].split(".")[1]
@@ -297,7 +301,7 @@ if __name__ == "__main__":
     def validate_args(args):
         required_keys = ["org_id", "api_key", "port_client_id", "port_client_secret"]
         missing_keys = [key for key in required_keys if not getattr(args, key)]
-        
+
         if missing_keys:
             logger.error(f"The following keys are required: {', '.join(missing_keys)}")
             return False
@@ -305,24 +309,43 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--org-id", required=False,default=config("ORG_ID",""), type=str, help="Humanitec organization ID"
+        "--org-id",
+        required=False,
+        default=config("ORG_ID", ""),
+        type=str,
+        help="Humanitec organization ID",
     )
-    parser.add_argument("--api-key", required=False,default=config("API_KEY",""), type=str, help="Humanitec API key")
+    parser.add_argument(
+        "--api-key",
+        required=False,
+        default=config("API_KEY", ""),
+        type=str,
+        help="Humanitec API key",
+    )
     parser.add_argument(
         "--api-url",
         type=str,
-        default=config("API_URL","https://api.humanitec.com"),
+        default=config("API_URL", "https://api.humanitec.com"),
         help="Humanitec API URL",
     )
     parser.add_argument(
-        "--port-client-id", type=str, required=False,default=config("PORT_CLIENT_ID",""), help="Port client ID"
+        "--port-client-id",
+        type=str,
+        required=False,
+        default=config("PORT_CLIENT_ID", ""),
+        help="Port client ID",
     )
     parser.add_argument(
-        "--port-client-secret", type=str, required=False,default = config("PORT_CLIENT_SECRET",""), help="Port client secret"
+        "--port-client-secret",
+        type=str,
+        required=False,
+        default=config("PORT_CLIENT_SECRET", ""),
+        help="Port client secret",
     )
     args = parser.parse_args()
-    if not(validate_args(args)):
+    if not (validate_args(args)):
         import sys
+
         sys.exit()
 
     httpx_async_client = httpx.AsyncClient()
@@ -339,3 +362,13 @@ if __name__ == "__main__":
     )
     exporter = HumanitecExporter(port_client, humanitec_client)
     asyncio.run(exporter(args))
+
+# PORT_CLIENT_ID = "Ex3GeM9hXjiYowHNkoWUxsMnP0ZXsMNm"  # config("PORT_CLIENT_ID")
+# PORT_CLIENT_SECRET = "ZFZudx0u4rlLGrLme944a9gBOh2j3eirqd9SwJ3XqEU7oCRthv088uBCj1CyZCy0"  # config("PORT_CLIENT_SECRET")
+# PORT_API_URL = "https://api.getport.io/v1"
+
+# HUMANITEC_API_TOKEN = "WLnM3EJm1bGMScqvuu2HH4YBB5FaNRlYUqkuc2C-RrDM"
+# BASE_URL = "https://api.humanitec.io"
+# HUMANITEC_ORG_ID = "port-testing"
+
+# python integration/main.py --org-id=port-testing --api-key=WLnM3EJm1bGMScqvuu2HH4YBB5FaNRlYUqkuc2C-RrDM --port-client-id=Ex3GeM9hXjiYowHNkoWUxsMnP0ZXsMNm --port-client-secret=ZFZudx0u4rlLGrLme944a9gBOh2j3eirqd9SwJ3XqEU7oCRthv088uBCj1CyZCy0
