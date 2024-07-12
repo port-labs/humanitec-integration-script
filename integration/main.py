@@ -362,13 +362,3 @@ if __name__ == "__main__":
     )
     exporter = HumanitecExporter(port_client, humanitec_client)
     asyncio.run(exporter(args))
-
-# PORT_CLIENT_ID = "Ex3GeM9hXjiYowHNkoWUxsMnP0ZXsMNm"  # config("PORT_CLIENT_ID")
-# PORT_CLIENT_SECRET = "ZFZudx0u4rlLGrLme944a9gBOh2j3eirqd9SwJ3XqEU7oCRthv088uBCj1CyZCy0"  # config("PORT_CLIENT_SECRET")
-# PORT_API_URL = "https://api.getport.io/v1"
-
-# HUMANITEC_API_TOKEN = "WLnM3EJm1bGMScqvuu2HH4YBB5FaNRlYUqkuc2C-RrDM"
-# BASE_URL = "https://api.humanitec.io"
-# HUMANITEC_ORG_ID = "port-testing"
-
-# python integration/main.py --org-id=port-testing --api-key=WLnM3EJm1bGMScqvuu2HH4YBB5FaNRlYUqkuc2C-RrDM --port-client-id=Ex3GeM9hXjiYowHNkoWUxsMnP0ZXsMNm --port-client-secret=ZFZudx0u4rlLGrLme944a9gBOh2j3eirqd9SwJ3XqEU7oCRthv088uBCj1CyZCy0
