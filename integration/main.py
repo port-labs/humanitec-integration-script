@@ -222,7 +222,7 @@ class HumanitecExporter:
             )
             return resource
         except Exception as e:
-            logger.info(
+            logger.error(
                 f"Failed to enrich resource {resource['res_id']} with graph: %s", str(e)
             )
             return resource
