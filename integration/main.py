@@ -152,7 +152,7 @@ class HumanitecExporter:
                     "type": graph_data["type"],
                     "class": graph_data["class"],
                     "resourceSchema": graph_data["resource_schema"],
-                    "resource": graph_data["resource"]
+                    "resource": graph_data["resource"],
                 },
                 "relations": {},
             }
@@ -206,19 +206,26 @@ class HumanitecExporter:
         )
 
     async def enrich_resource_with_graph(self, resource, application, environment):
-        data = {
-            "id": resource["res_id"],
-            "type": resource["type"],
-            "resource": resource["resource"]
-        }
-        response = await humanitec_client.get_resource_graph(
-            application, environment, [data]
-        )
+        try:
+            logger.info("Enriching resource %s with graph", resource["res_id"])
+            data = {
+                "id": resource["res_id"],
+                "type": resource["type"],
+                "resource": resource["resource"],
+            }
+            response = await humanitec_client.get_resource_graph(
+                application, environment, [data]
+            )
 
-        resource.update(
-            {"__resourceGraph": i for i in response if i["type"] == data["type"]}
-        )
-        return resource
+            resource.update(
+                {"__resourceGraph": i for i in response if i["type"] == data["type"]}
+            )
+            return resource
+        except Exception as e:
+            logger.info(
+                f"Failed to enrich resource {resource['res_id']} with graph: %s", str(e)
+            )
+            return resource
 
     async def sync_resources(self) -> None:
         logger.info(f"Syncing entities for blueprint {BLUEPRINT.RESOURCE}")
@@ -242,7 +249,9 @@ class HumanitecExporter:
                     "driverType": resource["driver_type"],
                 },
                 "relations": {
-                    BLUEPRINT.RESOURCE_GRAPH: resource["__resourceGraph"]["depends_on"],
+                    BLUEPRINT.RESOURCE_GRAPH: resource.get("__resourceGraph", {}).get(
+                        "depends_on", []
+                    ),
                     BLUEPRINT.WORKLOAD: workload_id,
                 },
             }
