@@ -74,7 +74,7 @@ class HumanitecClient:
 
         try:
             if cached_environments := await self.cache.get(CACHE_KEYS.ENVIRONMENT):
-                if cached_environments := cached_environments.get(app["id"], {}):
+                if cached_environments := cached_environments.get(app["id"]):
                     logger.info(
                         f"Retrieved {len(cached_environments)} environment for {app['id']} from cache"
                     )
@@ -156,7 +156,7 @@ class HumanitecClient:
             def get_resource_graph_request_body(modules):
                 return [
                     {
-                        "id": module["gu_res_id"],
+                        "id": module["res_id"],
                         "type": module["type"],
                         "resource": module["resource"],
                     }

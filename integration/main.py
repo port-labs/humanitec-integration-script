@@ -102,8 +102,9 @@ class HumanitecExporter:
         logger.info(f"Syncing entities for blueprint {BLUEPRINT.WORKLOAD}")
 
         def create_workload_entity(resource, application):
+            identifier = f"{application['id']}/{environment['id']}/{resource['res_id'].replace('modules.', '')}"
             return {
-                "identifier": resource["res_id"].replace("modules.", ""),
+                "identifier": identifier,
                 "title": self.remove_symbols_and_title_case(
                     resource["res_id"].replace("modules.", "")
                 ),
@@ -151,7 +152,7 @@ class HumanitecExporter:
                     "type": graph_data["type"],
                     "class": graph_data["class"],
                     "resourceSchema": graph_data["resource_schema"],
-                    "resource": graph_data["resource"],
+                    "resource": graph_data["resource"]
                 },
                 "relations": {},
             }
@@ -206,9 +207,9 @@ class HumanitecExporter:
 
     async def enrich_resource_with_graph(self, resource, application, environment):
         data = {
-            "id": resource["gu_res_id"],
+            "id": resource["res_id"],
             "type": resource["type"],
-            "resource": resource["resource"],
+            "resource": resource["resource"]
         }
         response = await humanitec_client.get_resource_graph(
             application, environment, [data]
@@ -228,6 +229,7 @@ class HumanitecExporter:
                 if resource["res_id"].split(".")[0].startswith("modules")
                 else ""
             )
+            workload_id = f"{resource['app_id']}/{resource['env_id']}/{workload_id}"
             return {
                 "identifier": resource["__resourceGraph"]["guresid"],
                 "title": self.remove_symbols_and_title_case(resource["def_id"]),
