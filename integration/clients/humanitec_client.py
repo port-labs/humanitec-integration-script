@@ -128,13 +128,36 @@ class HumanitecClient:
                     }
                 },
             )
-            logger.info(f"Received {len(resources)} resources from Humanitec")
+            logger.info(
+                f"Received {len(resources)} resources for {env['id']} environment in {app['id']}"
+            )
+            print("RESOURCES ", resources)
             return resources
         except Exception as e:
             logger.error(
-                f"Failed to fetch resources from {env['id']} environment in {app[id]}: {str(e)}"
+                f"Failed to fetch resources for {env['id']} environment in {app[id]}: {str(e)}"
             )
             return []
+
+    async def get_dependency_graph(
+        self, app: Dict[str, Any], env: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        if dependency_graph_id := env.get("last_deploy", {}).get("dependency_graph_id"):
+            endpoint = f"apps/{app['id']}/envs/{env['id']}/resources/graphs/{dependency_graph_id}"
+            humanitec_headers = self.get_humanitec_headers()
+            graph = await self.send_api_request(
+                "GET", endpoint, headers=humanitec_headers
+            )
+            nodes = graph["nodes"]
+            logger.info(
+                f"Received {len(nodes)} graph nodes for {env['id']} environment in {app['id']}"
+            )
+            return nodes
+
+        logger.info(
+            f"No dependency graph found for {env['id']} environment in {app['id']}"
+        )
+        return []
 
     async def get_resource_graph(
         self, app: Dict[str, Any], env: Dict[str, Any], data: List[Dict[str, Any]]
@@ -144,7 +167,6 @@ class HumanitecClient:
         graph = await self.send_api_request(
             "POST", endpoint, headers=humanitec_headers, json=data
         )
-
         return graph
 
     async def get_all_resource_graphs(

@@ -20,9 +20,21 @@ class BLUEPRINT:
 
 
 class HumanitecExporter:
-    def __init__(self, port_client, humanitec_client) -> None:
-        self.port_client = port_client
-        self.humanitec_client = humanitec_client
+    def __init__(self, args) -> None:
+
+        timeout = httpx.Timeout(10.0, connect=10.0, read=20.0, write=10.0)
+        httpx_async_client = httpx.AsyncClient(timeout=timeout)
+        self.port_client = PortClient(
+            args.port_client_id,
+            args.port_client_secret,
+            httpx_async_client=httpx_async_client,
+        )
+        self.humanitec_client = HumanitecClient(
+            args.org_id,
+            args.api_key,
+            api_url=args.api_url,
+            httpx_async_client=httpx_async_client,
+        )
 
     @staticmethod
     def convert_to_datetime(timestamp: int) -> str:
@@ -91,7 +103,7 @@ class HumanitecExporter:
             )
             for application in applications
             for environments in [
-                await humanitec_client.get_all_environments(application)
+                await self.humanitec_client.get_all_environments(application)
             ]
             for environment in environments
         ]
@@ -122,14 +134,16 @@ class HumanitecExporter:
                 },
             }
 
-        applications = await humanitec_client.get_all_applications()
+        applications = await self.humanitec_client.get_all_applications()
         for application in applications:
             environments = await self.humanitec_client.get_all_environments(application)
             for environment in environments:
                 resources = await self.humanitec_client.get_all_resources(
                     application, environment
                 )
-                resource_group = humanitec_client.group_resources_by_type(resources)
+                resource_group = self.humanitec_client.group_resources_by_type(
+                    resources
+                )
                 tasks = [
                     self.port_client.upsert_entity(
                         blueprint_id=BLUEPRINT.WORKLOAD,
@@ -144,7 +158,10 @@ class HumanitecExporter:
     async def sync_resource_graphs(self) -> None:
         logger.info(f"Syncing entities for blueprint {BLUEPRINT.RESOURCE_GRAPH}")
 
-        def create_resource_graph_entity(graph_data, include_relations):
+        def create_resource_graph_entity(
+            graph_data, include_relations, application, environment
+        ):
+            print("GRAPH DATA", graph_data)
             entity = {
                 "identifier": graph_data["guresid"],
                 "title": self.remove_symbols_and_title_case(graph_data["def_id"]),
@@ -157,8 +174,10 @@ class HumanitecExporter:
                 "relations": {},
             }
             if include_relations:
+
                 entity["relations"] = {
-                    BLUEPRINT.RESOURCE_GRAPH: graph_data["depends_on"]
+                    BLUEPRINT.RESOURCE_GRAPH: graph_data["depends_on"],
+                    BLUEPRINT.ENVIRONMENT: f"{application['id']}/{environment['id']}",
                 }
             return entity
 
@@ -166,16 +185,8 @@ class HumanitecExporter:
         for application in applications:
             environments = await self.humanitec_client.get_all_environments(application)
             for environment in environments:
-                resources = await self.humanitec_client.get_all_resources(
+                graph_nodes = await self.humanitec_client.get_dependency_graph(
                     application, environment
-                )
-                resources = humanitec_client.group_resources_by_type(resources)
-                modules = resources.get("modules", [])
-                if not modules:
-                    continue
-
-                resource_graph = await humanitec_client.get_all_resource_graphs(
-                    modules, application, environment
                 )
 
                 # First pass: Create entities without relations
@@ -183,10 +194,10 @@ class HumanitecExporter:
                     self.port_client.upsert_entity(
                         blueprint_id=BLUEPRINT.RESOURCE_GRAPH,
                         entity_object=create_resource_graph_entity(
-                            graph_data, include_relations=False
+                            node, False, application, environment
                         ),
                     )
-                    for graph_data in resource_graph
+                    for node in graph_nodes
                 ]
                 await asyncio.gather(*tasks)
 
@@ -195,10 +206,10 @@ class HumanitecExporter:
                     self.port_client.upsert_entity(
                         blueprint_id=BLUEPRINT.RESOURCE_GRAPH,
                         entity_object=create_resource_graph_entity(
-                            graph_data, include_relations=True
+                            node, True, application, environment
                         ),
                     )
-                    for graph_data in resource_graph
+                    for node in graph_nodes
                 ]
                 await asyncio.gather(*tasks)
         logger.info(
@@ -213,7 +224,7 @@ class HumanitecExporter:
                 "type": resource["type"],
                 "resource": resource["resource"],
             }
-            response = await humanitec_client.get_resource_graph(
+            response = await self.humanitec_client.get_resource_graph(
                 application, environment, [data]
             )
 
@@ -231,14 +242,17 @@ class HumanitecExporter:
         logger.info(f"Syncing entities for blueprint {BLUEPRINT.RESOURCE}")
 
         def create_resource_entity(resource):
+            print("RESOURCE", resource)
             workload_id = (
                 resource["res_id"].split(".")[1]
                 if resource["res_id"].split(".")[0].startswith("modules")
                 else ""
             )
-            workload_id = f"{resource['app_id']}/{resource['env_id']}/{workload_id}"
-            return {
-                "identifier": resource["__resourceGraph"]["guresid"],
+            resource_id = (
+                f"{resource['app_id']}/{resource['env_id']}/{resource['res_id']}"
+            )
+            entity = {
+                "identifier": resource_id,
                 "title": self.remove_symbols_and_title_case(resource["def_id"]),
                 "properties": {
                     "type": resource["type"],
@@ -248,51 +262,34 @@ class HumanitecExporter:
                     "updateAt": resource["updated_at"],
                     "driverType": resource["driver_type"],
                 },
-                "relations": {
-                    BLUEPRINT.RESOURCE_GRAPH: resource.get("__resourceGraph", {}).get(
-                        "depends_on", []
-                    ),
-                    BLUEPRINT.WORKLOAD: workload_id,
-                },
+                "relations": {},
             }
-
-        async def fetch_resources(application, environment):
-            resources = await self.humanitec_client.get_all_resources(
-                application, environment
-            )
-            resources = humanitec_client.group_resources_by_type(resources)
-            modules = resources.get("modules", [])
-            if not modules:
-                return []
-
-            tasks = [
-                self.enrich_resource_with_graph(resource, application, environment)
-                for resource in modules
-            ]
-            enriched_resources = await asyncio.gather(*tasks)
-            return enriched_resources
+            if workload_id:
+                workload_id = f"{resource['app_id']}/{resource['env_id']}/{workload_id}"
+                entity["relations"][BLUEPRINT.WORKLOAD] = workload_id
+                entity["relations"][BLUEPRINT.RESOURCE_GRAPH] = resource["gu_res_id"]
+            return entity
 
         applications = await self.humanitec_client.get_all_applications()
         for application in applications:
             environments = await self.humanitec_client.get_all_environments(application)
-
-            resource_tasks = [
-                fetch_resources(application, environment)
-                for environment in environments
-            ]
-            all_resources = await asyncio.gather(*resource_tasks)
-            all_resources = [
-                resource for sublist in all_resources for resource in sublist
-            ]  # Flatten the list
-
-            entity_tasks = [
-                self.port_client.upsert_entity(
-                    blueprint_id=BLUEPRINT.RESOURCE,
-                    entity_object=create_resource_entity(resource),
+            for environment in environments:
+                resources = await self.humanitec_client.get_all_resources(
+                    application, environment
                 )
-                for resource in all_resources
-            ]
-            await asyncio.gather(*entity_tasks)
+
+                entity_tasks = [
+                    self.port_client.upsert_entity(
+                        blueprint_id=BLUEPRINT.RESOURCE,
+                        entity_object=create_resource_entity(resource),
+                    )
+                    for resource in resources
+                ]
+                await asyncio.gather(*entity_tasks)
+                logger.info(
+                    "Upserted resource entities for %s environment", environment["id"]
+                )
+
         logger.info(f"Finished syncing entities for blueprint {BLUEPRINT.RESOURCE}")
 
     async def sync_all(self) -> None:
@@ -359,18 +356,5 @@ if __name__ == "__main__":
 
         sys.exit()
 
-    timeout = httpx.Timeout(10.0, connect=10.0, read=10.0, write=10.0)
-    httpx_async_client = httpx.AsyncClient(timeout=timeout)
-    port_client = PortClient(
-        args.port_client_id,
-        args.port_client_secret,
-        httpx_async_client=httpx_async_client,
-    )
-    humanitec_client = HumanitecClient(
-        args.org_id,
-        args.api_key,
-        api_url=args.api_url,
-        httpx_async_client=httpx_async_client,
-    )
-    exporter = HumanitecExporter(port_client, humanitec_client)
+    exporter = HumanitecExporter(args)
     asyncio.run(exporter(args))
