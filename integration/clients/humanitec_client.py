@@ -131,7 +131,6 @@ class HumanitecClient:
             logger.info(
                 f"Received {len(resources)} resources for {env['id']} environment in {app['id']}"
             )
-            print("RESOURCES ", resources)
             return resources
         except Exception as e:
             logger.error(

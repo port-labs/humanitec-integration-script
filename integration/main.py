@@ -161,7 +161,6 @@ class HumanitecExporter:
         def create_resource_graph_entity(
             graph_data, include_relations, application, environment
         ):
-            print("GRAPH DATA", graph_data)
             entity = {
                 "identifier": graph_data["guresid"],
                 "title": self.remove_symbols_and_title_case(graph_data["def_id"]),
@@ -242,7 +241,6 @@ class HumanitecExporter:
         logger.info(f"Syncing entities for blueprint {BLUEPRINT.RESOURCE}")
 
         def create_resource_entity(resource):
-            print("RESOURCE", resource)
             workload_id = (
                 resource["res_id"].split(".")[1]
                 if resource["res_id"].split(".")[0].startswith("modules")
