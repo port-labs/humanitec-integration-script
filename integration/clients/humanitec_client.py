@@ -74,11 +74,11 @@ class HumanitecClient:
 
         try:
             if cached_environments := await self.cache.get(CACHE_KEYS.ENVIRONMENT):
-                if cached_environments := cached_environments.get(app["id"]):
+                if app_environments := cached_environments.get(app["id"]):
                     logger.info(
-                        f"Retrieved {len(cached_environments)} environment for {app['id']} from cache"
+                        f"Retrieved {len(app_environments)} environment for {app['id']} from cache"
                     )
-                    return list(cached_environments.values())
+                    return list(app_environments.values())
 
             logger.info("Fetching environments from Humanitec")
 
@@ -104,13 +104,13 @@ class HumanitecClient:
     async def get_all_resources(self, app, env) -> List[Dict[str, Any]]:
         try:
             if cached_resources := await self.cache.get(CACHE_KEYS.RESOURCE):
-                if cached_resources := cached_resources.get(app["id"], {}).get(
-                    env["id"], {}
+                if env_resources := cached_resources.get(app["id"], {}).get(
+                    env["id"]
                 ):
                     logger.info(
-                        f"Retrieved {len(cached_resources)} resources from cache for app {app['id']} and env {env['id']}"
+                        f"Retrieved {len(env_resources)} resources from cache for app {app['id']} and env {env['id']}"
                     )
-                    return list(cached_resources.values())
+                    return list(env_resources.values())
 
             logger.info("Fetching resources from Humanitec")
             endpoint = f"apps/{app['id']}/envs/{env['id']}/resources"
@@ -141,22 +141,28 @@ class HumanitecClient:
     async def get_dependency_graph(
         self, app: Dict[str, Any], env: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
-        if dependency_graph_id := env.get("last_deploy", {}).get("dependency_graph_id"):
-            endpoint = f"apps/{app['id']}/envs/{env['id']}/resources/graphs/{dependency_graph_id}"
-            humanitec_headers = self.get_humanitec_headers()
-            graph = await self.send_api_request(
-                "GET", endpoint, headers=humanitec_headers
-            )
-            nodes = graph["nodes"]
-            logger.info(
-                f"Received {len(nodes)} graph nodes for {env['id']} environment in {app['id']}"
-            )
-            return nodes
+        try:
+            if dependency_graph_id := env.get("last_deploy", {}).get("dependency_graph_id"):
+                endpoint = f"apps/{app['id']}/envs/{env['id']}/resources/graphs/{dependency_graph_id}"
+                humanitec_headers = self.get_humanitec_headers()
+                graph = await self.send_api_request(
+                    "GET", endpoint, headers=humanitec_headers
+                )
+                nodes = graph["nodes"]
+                logger.info(
+                    f"Received {len(nodes)} graph nodes for {env['id']} environment in {app['id']}"
+                )
+                return nodes
 
-        logger.info(
-            f"No dependency graph found for {env['id']} environment in {app['id']}"
-        )
-        return []
+            logger.info(
+                f"No dependency graph found for {env['id']} environment in {app['id']}"
+            )
+            return []
+        except Exception as e:
+            logger.error(
+                f"Failed to fetch dependency graphs for {env['id']} environment in {app['id']}: {str(e)}"
+            )
+            return []
 
     async def get_resource_graph(
         self, app: Dict[str, Any], env: Dict[str, Any], data: List[Dict[str, Any]]
@@ -167,37 +173,6 @@ class HumanitecClient:
             "POST", endpoint, headers=humanitec_headers, json=data
         )
         return graph
-
-    async def get_all_resource_graphs(
-        self, modules: List[Dict[str, Any]], app: Dict[str, Any], env: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
-
-        try:
-
-            def get_resource_graph_request_body(modules):
-                return [
-                    {
-                        "id": module["res_id"],
-                        "type": module["type"],
-                        "resource": module["resource"],
-                    }
-                    for module in modules
-                ]
-
-            data = get_resource_graph_request_body(modules)
-
-            graph_entities: List[Dict[str, Any]] = await self.get_resource_graph(
-                app, env, data
-            )
-            logger.info(
-                f"Received {len(graph_entities)} resource graph entities from app: {app['id']} and env: {env['id']} using data: {data}"
-            )
-            return graph_entities
-        except Exception as e:
-            logger.error(
-                f"Failed to fetch resource graphs from {env['id']} environment in {app['id']}: {str(e)}"
-            )
-            return []
 
     def group_resources_by_type(
         self, data: List[Dict[str, Any]]
