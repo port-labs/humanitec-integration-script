@@ -265,7 +265,6 @@ class HumanitecExporter:
             if workload_id:
                 workload_id = f"{resource['app_id']}/{resource['env_id']}/{workload_id}"
                 entity["relations"][BLUEPRINT.WORKLOAD] = workload_id
-                entity["relations"][BLUEPRINT.RESOURCE_GRAPH] = resource["gu_res_id"]
             return entity
 
         applications = await self.humanitec_client.get_all_applications()

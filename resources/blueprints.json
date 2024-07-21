@@ -162,12 +162,6 @@
       "calculationProperties": {},
       "aggregationProperties": {},
       "relations": {
-        "humanitecResourceGraph": {
-          "title": "Graph",
-          "target": "humanitecResourceGraph",
-          "required": false,
-          "many": false
-        },
         "humanitecWorkload": {
           "title": "Humanitec Workload",
           "target": "humanitecWorkload",
